@@ -1,31 +1,40 @@
-long long maxSubarrays(int n, std::vector<std::vector<int>>& conflicts) {
-    std::vector<std::vector<int>> conflictWith(n + 1);
-    for (const auto& pair : conflicts) {
-        int a = std::max(pair[0], pair[1]);
-        int b = std::min(pair[0], pair[1]);
-        conflictWith[a].push_back(b);
-    }
+#include <vector>
+#include <algorithm>
 
-    long long result = 0;
-    std::vector<long long> topTwo = {0, 0};
-    std::vector<long long> gain(n + 1, 0);
+class Solution {
+public:
+    long long maxSubarrays(int n, std::vector<std::vector<int>>& conflictingPairs) {
+        std::vector<std::vector<int>> right(n + 1);
+        for (const auto& pair : conflictingPairs) {
+            right[std::max(pair[0], pair[1])].push_back(std::min(pair[0], pair[1]));
+        }
 
-    for (int end = 1; end <= n; ++end) {
-        for (int conflictStart : conflictWith[end]) {
-            if (conflictStart > topTwo[0]) {
-                topTwo = {conflictStart, topTwo[0]};
-            } else if (conflictStart > topTwo[1]) {
-                topTwo = {topTwo[0], conflictStart};
+        long long ans = 0;
+        std::vector<long long> left = {0, 0};
+        std::vector<long long> bonus(n + 1, 0);
+
+        for (int r = 1; r <= n; ++r) {
+            for (int l_val : right[r]) {
+                // Manually update top two values
+                if (l_val > left[0]) {
+                    left = {static_cast<long long>(l_val), left[0]};
+                } else if (l_val > left[1]) {
+                    left = {left[0], static_cast<long long>(l_val)};
+                }
+            }
+
+            ans += r - left[0];
+            
+            if (left[0] > 0) {
+                bonus[left[0]] += left[0] - left[1];
             }
         }
-
-        result += end - topTwo[0];
-
-        if (topTwo[0] > 0) {
-            gain[topTwo[0]] += topTwo[0] - topTwo[1];
+        
+        long long max_bonus = 0;
+        for(long long b : bonus) {
+            max_bonus = std::max(max_bonus, b);
         }
-    }
 
-    long long bestGain = *std::max_element(gain.begin(), gain.end());
-    return result + bestGain;
-}
+        return ans + max_bonus;
+    }
+};
